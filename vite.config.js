@@ -13,6 +13,16 @@ export default defineConfig({
       additionalLegacyPolyfills: ['regenerator-runtime/runtime']
     })
   ],
+  // 代理
+  server:{
+    proxy: {
+      '/msg-api': {
+        target: 'http://124.222.68.249:7333',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/msg-api/, '')
+      }
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -44,7 +44,7 @@ export default {
           "message": [
             {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899de"},
             {"role": "assistant", "content": "我是一个AI机器人，我被设计用来回答各种问题，帮助人们解决各种问题。", "time": "2021-01-01 12:00:00"},
-            {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899de"},
+            {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899df"},
             {"role": "assistant", "content": "我是一个AI机器人，我被设计用来回答各种问题，帮助人们解决各种问题。", "time": "2021-01-01 12:00:00"},
 
           ]
@@ -61,6 +61,9 @@ export default {
       ]
     }
   },
+  mounted() {
+
+  },
   methods: {
     clickChatListItem(id) {
       this.current_index = this.chatList.findIndex(item => item.id === id)
@@ -70,8 +73,9 @@ export default {
         "role": "user",
         "content": this.msg,
         "time": this.getNowTime(),
-        "msg_id": "78f03745-3562-4f69-b053-06d8beb899de"
+        "msg_id": ""
       })
+      this.postSendMsg(this.msg)
     },
     /**
      * 获取当前时间 时间格式"2021-01-01 12:00:00" 24小时制 有前导零
@@ -91,6 +95,46 @@ export default {
       minute = minute < 10 ? "0" + minute : minute;
       second = second < 10 ? "0" + second : second;
       return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+    },
+    getMsg(msg_id) {
+      fetch(`msg-api/result/${msg_id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(res => {
+        return res.json()
+      }).then(res => {
+        if (res.status === 'done') {
+          this.chatList[this.current_index].message.push({
+            "role": "assistant",
+            "content": res.result,
+            "time": this.getNowTime()
+          })
+        } else {
+          setTimeout(() => {
+            this.getMsg(msg_id)
+          }, 1000)
+        }
+      })
+    },
+    postSendMsg(msg) {
+      // 用fatch发送消息post请求
+      fetch('msg-api/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          "message": msg,
+          "key": "88888888-88888888-88888888-88888888"
+        })
+      }).then(res => {
+        return res.json()
+      }).then(res => {
+        this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].msg_id = res.msg_id
+        this.getMsg(res.msg_id)
+      })
     }
   }
 }
