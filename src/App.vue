@@ -13,4 +13,7 @@
   padding: 0;
   box-sizing: border-box;
 }
+#app {
+  height: 100vh;
+}
 </style>

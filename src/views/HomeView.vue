@@ -13,16 +13,16 @@
           <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
           <div class="chat-item-header-time">{{ chatList[current_index].chat_time }}</div>
         </div>
-        <div class="chat-item-body">
+        <div class="chat-item-body" ref="chatBodyRef">
           <div class="chat-item-body-message" v-for="message in chatList[current_index].message" :key="message.msg_id">
-            <div class="chat-item-body-message-content" :class="message.role">{{ message.content }}</div>
+            <div class="chat-item-body-message-content" :class="message.role" v-html="markdown(message.content)"></div>
             <div class="chat-item-body-message-time" :class="message.role">{{ message.time }}</div>
           </div>
         </div>
       </div>
       <div class="chat-input">
-        <input type="text" placeholder="请输入内容" v-model="msg">
-        <button @click="sendMsg">发送</button>
+        <textarea @keydown.enter="keyDown" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
+        <button @click="sendMsg(chatList[current_index].id)">发送</button>
       </div>
     </div>
 
@@ -30,6 +30,37 @@
 </template>
 
 <script>
+import { marked } from 'marked'
+import hljs from "highlight.js"; // 引入 highlight.js
+import "highlight.js/styles/atom-one-dark.css"; // 引入高亮样式 这里我用的是sublime样式
+
+// var rendererMD = new marked.Renderer();
+// marked.setOptions({
+//   renderer: rendererMD,
+//   highlight: function(code) {
+//     return hljs.highlightAuto(code).value;
+//   },
+//   pedantic: false,
+//   gfm: true,
+//   tables: true,
+//   breaks: false,
+//   sanitize: false,
+//   smartLists: true,
+//   smartypants: false,
+//   xhtml: false
+// });
+var rendererMD = new marked.Renderer();
+marked.setOptions({
+  renderer: rendererMD,
+  highlight: function(code) {
+    return hljs.highlightAuto(code).value;
+  },
+  langPrefix: 'hljs language-', // highlight.js css expects a top-level 'hljs' class.
+  tables: true,
+  gfm: true,
+  breaks: true,
+})
+
 export default {
   name: 'HomeView',
   data() {
@@ -65,17 +96,42 @@ export default {
 
   },
   methods: {
-    clickChatListItem(id) {
-      this.current_index = this.chatList.findIndex(item => item.id === id)
+    markdown(content) {
+      return marked(content)
     },
-    sendMsg() {
-      this.chatList[this.current_index].message.push({
+    keyDown(e) {
+      if(e.ctrlKey && e.keyCode==13) {  //用户点击了ctrl+enter触发
+        this.msg += '\n';
+      }else { //用户点击了enter触发
+        // 执行一些逻辑方法
+        this.sendMsg(this.chatList[this.current_index].id)
+        if(e != undefined){
+          e.preventDefault();  // 阻止浏览器默认的敲击回车换行的方法
+        }
+      }
+    },
+    clickChatListItem(id) {
+      this.current_index = this.getChatIndex(id)
+    },
+    getChatIndex(id) {
+      return this.chatList.findIndex(item => item.id === id)
+    },
+    toBottom() {
+      this.$nextTick(() => {
+        this.$refs.chatBodyRef.scrollTop = this.$refs.chatBodyRef.scrollHeight
+      })
+    },
+    sendMsg(chat_id) {
+      let current_index = this.getChatIndex(chat_id)
+      this.chatList[current_index].message.push({
         "role": "user",
         "content": this.msg,
         "time": this.getNowTime(),
         "msg_id": ""
       })
-      this.postSendMsg(this.msg)
+      this.postSendMsg(this.msg, chat_id)
+      this.msg = ''
+      this.toBottom()
     },
     /**
      * 获取当前时间 时间格式"2021-01-01 12:00:00" 24小时制 有前导零
@@ -96,7 +152,10 @@ export default {
       second = second < 10 ? "0" + second : second;
       return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
     },
-    getMsg(msg_id) {
+    getMsg(msg_id, chat_id) {
+      let current_index = this.getChatIndex(chat_id)
+
+
       fetch(`msg-api/result/${msg_id}`, {
         method: 'GET',
         headers: {
@@ -106,19 +165,26 @@ export default {
         return res.json()
       }).then(res => {
         if (res.status === 'done') {
-          this.chatList[this.current_index].message.push({
-            "role": "assistant",
-            "content": res.result,
-            "time": this.getNowTime()
-          })
+          this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = res.result
+          this.toBottom()
         } else {
+          if (res.status === 'pending') {
+            if(res.wait_tasks <= 1) {
+              this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `正在回答中`
+            } else {
+              this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `排队中，还剩${res.wait_tasks}个`
+            }
+          } else if(res.status == 'processing') {
+            this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `正在回答中...`
+          }
           setTimeout(() => {
-            this.getMsg(msg_id)
+            this.getMsg(msg_id, chat_id)
           }, 1000)
         }
       })
     },
-    postSendMsg(msg) {
+    postSendMsg(msg, chat_id) {
+      let current_index = this.getChatIndex(chat_id)
       // 用fatch发送消息post请求
       fetch('msg-api/message', {
         method: 'POST',
@@ -132,8 +198,14 @@ export default {
       }).then(res => {
         return res.json()
       }).then(res => {
-        this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].msg_id = res.msg_id
-        this.getMsg(res.msg_id)
+        this.chatList[current_index].message[this.chatList[current_index].message.length - 1].msg_id = res.msg_id
+        this.chatList[current_index].message.push({
+          "role": "assistant",
+          "content": '连接服务器中',
+          "time": this.getNowTime()
+        })
+        this.getMsg(res.msg_id, chat_id)
+        this.toBottom()
       })
     }
   }
@@ -143,6 +215,7 @@ export default {
 <style lang="less">
 .container {
   display: flex;
+  height: 100%;
   .chat-list {
     display: flex;
     flex-direction: column;
@@ -166,6 +239,8 @@ export default {
     flex-direction: column;
     .chat-detail {
       flex: 1;
+      height: 100vh;
+      overflow: auto;
       .chat-item-header {
         display: flex;
         justify-content: space-between;
@@ -185,7 +260,7 @@ export default {
       }
 
       .chat-item-body {
-        height: 500px;
+        //height: 500px;
         overflow-y: auto;
         padding: 10px;
         .chat-item-body-message {
@@ -205,6 +280,12 @@ export default {
               color: white;
               align-self: flex-start;
             }
+            code {
+              background-color: #282c34;
+              padding: 0 10px;
+              border-radius: 5px;
+            }
+
           }
           .chat-item-body-message-time {
             font-size: 0.8rem;
@@ -223,7 +304,7 @@ export default {
       display: flex;
       align-items: center;
       padding: 10px;
-      input {
+      textarea {
         flex: 1;
         border: 1px solid #ccc;
         border-radius: 5px;
