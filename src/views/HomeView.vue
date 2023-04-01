@@ -1,12 +1,18 @@
 <template>
   <div class="container">
-    <div class="chat-list">
-      <div class="chat-item" v-for="item in chatList" :key="item.topic" @click="clickChatListItem(item.id)">
-        <div class="chat-item-header">
-          <div class="chat-item-header-title">{{ item.topic }}</div>
+    <div class="left">
+      <div class="add-topic">
+        <button @click="addTopic">添加主题</button>
+      </div>
+      <div class="chat-list">
+        <div class="chat-item" v-for="item in chatList" :key="item.topic" @click="clickChatListItem(item.id)">
+          <div class="chat-item-header">
+            <div class="chat-item-header-title">{{ item.topic }}</div>
+          </div>
         </div>
       </div>
     </div>
+
     <div class="chat-main">
       <div class="chat-detail">
         <div class="chat-item-header">
@@ -61,6 +67,8 @@ marked.setOptions({
   breaks: true,
 })
 
+import { nanoid } from 'nanoid'
+
 export default {
   name: 'HomeView',
   data() {
@@ -96,6 +104,28 @@ export default {
 
   },
   methods: {
+    addTopic() {
+      var topic = prompt("请输入主题", "新的主题");
+      let nowTime = this.getNowTime()
+      if (topic != null) {
+        const id = nanoid() // => "V1StGXR8_Z5jdHi6B-myT"
+        let newChat = {
+          "topic": topic,
+          "id": id,
+          "chat_time": nowTime,
+          "message": [
+            {"role": "assistant", "content": "随便问点什么吧！", "time": nowTime},
+          ]
+        }
+        if(topic !== '新的主题') {
+          newChat["message"][0].content = `问点和${topic}相关的吧!`
+        }
+
+        this.chatList.unshift(newChat)
+      }
+
+
+    },
     markdown(content) {
       return marked(content)
     },
@@ -216,21 +246,39 @@ export default {
 .container {
   display: flex;
   height: 100%;
-  .chat-list {
-    display: flex;
-    flex-direction: column;
-    //background-color: #f4f4f4;
-    height: 500px;
-
-    .chat-item {
-      background-color: rgba(81, 203, 213, 0.66);
-      color: white;
-      border-radius: 5px;
-      padding: 10px;
-      margin: 2px;
-      width: 7rem;
-      overflow: hidden;
+  .left {
+    .add-topic {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 30px;
+      background-color: #f4f4f4;
       cursor: pointer;
+      button {
+        border: none;
+        background-color: #f4f4f4;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+      }
+      margin-bottom: 20px;
+    }
+    .chat-list {
+      display: flex;
+      flex-direction: column;
+      //background-color: #f4f4f4;
+      height: 500px;
+
+      .chat-item {
+        background-color: rgba(81, 203, 213, 0.66);
+        color: white;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 2px;
+        width: 7rem;
+        overflow: hidden;
+        cursor: pointer;
+      }
     }
   }
   .chat-main {
