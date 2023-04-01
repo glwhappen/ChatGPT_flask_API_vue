@@ -16,8 +16,9 @@
     <div class="chat-main">
       <div class="chat-detail">
         <div class="chat-item-header">
-          <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
           <div class="chat-item-header-time">{{ chatList[current_index].chat_time }}</div>
+          <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
+          <div class="delete" @click="deleteTopic(chatList[current_index].id)">删除主题</div>
         </div>
         <div class="chat-item-body" ref="chatBodyRef">
           <div class="chat-item-body-message" v-for="message in chatList[current_index].message" :key="message.msg_id">
@@ -78,32 +79,44 @@ export default {
       chatList: [
         {
           "topic": "新的主题",
-          "id": "1",
-          "chat_time": "2021-01-01 12:00:00",
+          "id": nanoid(),
+          "chat_time": this.getNowTime(),
           "message": [
-            {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899de"},
-            {"role": "assistant", "content": "我是一个AI机器人，我被设计用来回答各种问题，帮助人们解决各种问题。", "time": "2021-01-01 12:00:00"},
-            {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899df"},
-            {"role": "assistant", "content": "我是一个AI机器人，我被设计用来回答各种问题，帮助人们解决各种问题。", "time": "2021-01-01 12:00:00"},
+            {"role": "assistant", "content": "你好，很高兴认识你，随便问点什么吧！", "time": this.getNowTime()},
 
           ]
         },
-        {
-          "topic": "新的主题2",
-          "id": "2",
-          "chat_time": "2021-01-01 12:00:00",
-          "message": [
-            {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899de"},
-            {"role": "assistant", "content": "我是一个AI机器人，我被设计用来回答各种问题，帮助人们解决各种问题。", "time": "2021-01-01 12:00:00"},
-          ]
-        }
+        // {
+        //   "topic": "新的主题2",
+        //   "id": "2",
+        //   "chat_time": "2021-01-01 12:00:00",
+        //   "message": [
+        //     {"role": "user", "content": "你是谁", "time": "2021-01-01 12:00:00", "msg_id": "78f03745-3562-4f69-b053-06d8beb899de"},
+        //     {"role": "assistant", "content": "我是一个AI机器人，我被设计用来回答各种问题，帮助人们解决各种问题。", "time": "2021-01-01 12:00:00"},
+        //   ]
+        // }
       ]
     }
   },
   mounted() {
+    this.loadChatList()
 
   },
   methods: {
+    deleteTopic(chat_id) {
+      let index = this.getChatIndex(chat_id)
+      this.chatList.splice(index, 1)
+      this.saveChatList()
+    },
+    saveChatList() {
+      localStorage.setItem('chatList', JSON.stringify(this.chatList))
+    },
+    loadChatList() {
+      let chatList = localStorage.getItem('chatList')
+      if(chatList) {
+        this.chatList = JSON.parse(chatList)
+      }
+    },
     addTopic() {
       var topic = prompt("请输入主题", "新的主题");
       let nowTime = this.getNowTime()
@@ -122,6 +135,7 @@ export default {
         }
 
         this.chatList.unshift(newChat)
+        this.saveChatList()
       }
 
 
@@ -162,6 +176,7 @@ export default {
       this.postSendMsg(this.msg, chat_id)
       this.msg = ''
       this.toBottom()
+      this.saveChatList()
     },
     /**
      * 获取当前时间 时间格式"2021-01-01 12:00:00" 24小时制 有前导零
@@ -304,6 +319,9 @@ export default {
         .chat-item-header-time {
           font-size: 0.8rem;
           color: #999;
+        }
+        .delete {
+          cursor: pointer;
         }
       }
 
