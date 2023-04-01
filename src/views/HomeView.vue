@@ -5,7 +5,7 @@
         <button @click="addTopic">添加主题</button>
       </div>
       <div class="chat-list">
-        <div class="chat-item" v-for="item in chatList" :key="item.topic" @click="clickChatListItem(item.id)">
+        <div class="chat-item" :class="{activate: index == current_index}" v-for="(item, index) in chatList" :key="item.topic" @click="clickChatListItem(item.id)">
           <div class="chat-item-header">
             <div class="chat-item-header-title">{{ item.topic }}</div>
           </div>
@@ -31,6 +31,7 @@
         <textarea @keydown.enter="keyDown" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
         <button @click="sendMsg(chatList[current_index].id)">发送</button>
       </div>
+      <p style="color:#b2afaf; fontSize:10px">测试中，目前不具备连续对话的能力，所有的聊天记录可以在本地的localStorage中找到</p>
     </div>
 
   </div>
@@ -98,11 +99,28 @@ export default {
       ]
     }
   },
+  watch: {
+    current_index() {
+      this.refreshLast()
+    }
+  },
   mounted() {
     this.loadChatList()
-
+    this.refreshLast()
   },
   methods: {
+    refreshLast() {
+      // 如果chatList message的最后一条role不是assistant，就用msg_id 重新请求一下result
+      if(this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].role != 'assistant') {
+        let msg_id = this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].msg_id
+        this.chatList[this.current_index].message.push({
+          "role": "assistant",
+          "content": '连接服务器中',
+          "time": this.getNowTime()
+        })
+        this.getMsg(msg_id, this.chatList[this.current_index].id)
+      }
+    },
     deleteTopic(chat_id) {
       let index = this.getChatIndex(chat_id)
       this.chatList.splice(index, 1)
@@ -176,7 +194,6 @@ export default {
       this.postSendMsg(this.msg, chat_id)
       this.msg = ''
       this.toBottom()
-      this.saveChatList()
     },
     /**
      * 获取当前时间 时间格式"2021-01-01 12:00:00" 24小时制 有前导零
@@ -244,6 +261,7 @@ export default {
         return res.json()
       }).then(res => {
         this.chatList[current_index].message[this.chatList[current_index].message.length - 1].msg_id = res.msg_id
+        this.saveChatList()
         this.chatList[current_index].message.push({
           "role": "assistant",
           "content": '连接服务器中',
@@ -275,6 +293,7 @@ export default {
         font-size: 1rem;
         color: #333;
         cursor: pointer;
+        user-select: none;
       }
       margin-bottom: 20px;
     }
@@ -285,6 +304,7 @@ export default {
       height: 500px;
 
       .chat-item {
+        user-select: none;
         background-color: rgba(81, 203, 213, 0.66);
         color: white;
         border-radius: 5px;
@@ -293,6 +313,10 @@ export default {
         width: 7rem;
         overflow: hidden;
         cursor: pointer;
+        &.activate {
+          background-color: rgba(81, 147, 213, 0.66);
+          color: white;
+        }
       }
     }
   }
@@ -300,6 +324,7 @@ export default {
     flex: 1;
     display: flex;
     flex-direction: column;
+    padding: 0 10%;
     .chat-detail {
       flex: 1;
       height: 100vh;
@@ -328,7 +353,7 @@ export default {
       .chat-item-body {
         //height: 500px;
         overflow-y: auto;
-        padding: 10px;
+
         .chat-item-body-message {
           display: flex;
           flex-direction: column;
