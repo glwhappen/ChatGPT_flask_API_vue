@@ -19,9 +19,8 @@
         <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
         <div class="delete" @click="deleteTopic(chatList[current_index].id)">删除主题</div>
       </div>
-      <div class="chat-detail">
-
-        <div class="chat-item-body" ref="chatBodyRef">
+      <div class="chat-detail" ref="chatBodyRef">
+        <div class="chat-item-body">
           <div class="chat-item-body-message" v-for="message in chatList[current_index].message" :key="message.msg_id">
             <div class="chat-item-body-message-content" :class="message.role" v-html="markdown(message.content)"></div>
             <div class="chat-item-body-message-time" :class="message.role">{{ message.time }}</div>
@@ -103,6 +102,7 @@ export default {
   watch: {
     current_index() {
       this.refreshLast()
+      this.toBottom()
     }
   },
   mounted() {
