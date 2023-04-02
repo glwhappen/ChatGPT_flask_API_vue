@@ -5,7 +5,7 @@
         <button @click="addTopic">添加主题</button>
       </div>
       <div class="chat-list">
-        <div class="chat-item" :class="{activate: index == current_index}" v-for="(item, index) in chatList" :key="item.topic" @click="clickChatListItem(item.id)">
+        <div class="chat-item" :class="{activate: index == current_index}" v-for="(item, index) in chatList" :key="item.id" @click="clickChatListItem(item.id)">
           <div class="chat-item-header">
             <div class="chat-item-header-title">{{ item.topic }}</div>
           </div>
@@ -14,12 +14,13 @@
     </div>
 
     <div class="chat-main">
+      <div class="chat-item-header">
+        <div class="chat-item-header-time">{{ chatList[current_index].chat_time }}</div>
+        <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
+        <div class="delete" @click="deleteTopic(chatList[current_index].id)">删除主题</div>
+      </div>
       <div class="chat-detail">
-        <div class="chat-item-header">
-          <div class="chat-item-header-time">{{ chatList[current_index].chat_time }}</div>
-          <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
-          <div class="delete" @click="deleteTopic(chatList[current_index].id)">删除主题</div>
-        </div>
+
         <div class="chat-item-body" ref="chatBodyRef">
           <div class="chat-item-body-message" v-for="message in chatList[current_index].message" :key="message.msg_id">
             <div class="chat-item-body-message-content" :class="message.role" v-html="markdown(message.content)"></div>
@@ -60,9 +61,9 @@ import "highlight.js/styles/atom-one-dark.css"; // 引入高亮样式 这里我�
 var rendererMD = new marked.Renderer();
 marked.setOptions({
   renderer: rendererMD,
-  highlight: function(code) {
-    return hljs.highlightAuto(code).value;
-  },
+  // highlight: function(code) {
+  //   return hljs.highlightAuto(code).value;
+  // },
   langPrefix: 'hljs language-', // highlight.js css expects a top-level 'hljs' class.
   tables: true,
   gfm: true,
@@ -181,6 +182,7 @@ export default {
     toBottom() {
       this.$nextTick(() => {
         this.$refs.chatBodyRef.scrollTop = this.$refs.chatBodyRef.scrollHeight
+        console.log(this.$refs.chatBodyRef.scrollHeight)
       })
     },
     sendMsg(chat_id) {
@@ -325,39 +327,48 @@ export default {
     display: flex;
     flex-direction: column;
     padding: 0 10%;
+
+
+    .chat-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      width: 100%;
+
+      .chat-item-header-title {
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 0.4rem;
+        color: var(--color-heading);
+      }
+      .chat-item-header-time {
+        font-size: 0.8rem;
+        color: #999;
+      }
+      .delete {
+        cursor: pointer;
+      }
+    }
+
     .chat-detail {
       flex: 1;
       height: 100vh;
       overflow: auto;
-      .chat-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px;
-        width: 100%;
-        .chat-item-header-title {
-          font-size: 1.2rem;
-          font-weight: 500;
-          margin-bottom: 0.4rem;
-          color: var(--color-heading);
-        }
-        .chat-item-header-time {
-          font-size: 0.8rem;
-          color: #999;
-        }
-        .delete {
-          cursor: pointer;
-        }
-      }
+
 
       .chat-item-body {
         //height: 500px;
-        overflow-y: auto;
+        overflow: auto;
+
+
 
         .chat-item-body-message {
           display: flex;
           flex-direction: column;
           margin-bottom: 10px;
+
+
           .chat-item-body-message-content {
             padding: 10px;
             border-radius: 5px;
@@ -372,7 +383,7 @@ export default {
               align-self: flex-start;
             }
             code {
-              background-color: #282c34;
+              //background-color: #282c34;
               padding: 0 10px;
               border-radius: 5px;
             }
