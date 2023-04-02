@@ -28,7 +28,7 @@
         </div>
       </div>
       <div class="chat-input">
-        <textarea @keydown.enter="keyDown" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
+        <textarea @keydown.enter="keyDown" :disabled="chatList[current_index].sending" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
         <button @click="sendMsg(chatList[current_index].id)">发送</button>
       </div>
       <p style="color:#b2afaf; fontSize:10px">测试中,所有的聊天记录可以在本地的localStorage中找到。可以同时开多个主题进行对话，随意切换</p>
@@ -60,9 +60,9 @@ import "highlight.js/styles/atom-one-dark.css"; // 引入高亮样式 这里我�
 var rendererMD = new marked.Renderer();
 marked.setOptions({
   renderer: rendererMD,
-  // highlight: function(code) {
-  //   return hljs.highlightAuto(code).value;
-  // },
+  highlight: function(code) {
+    return hljs.highlightAuto(code).value;
+  },
   langPrefix: 'hljs language-', // highlight.js css expects a top-level 'hljs' class.
   tables: true,
   gfm: true,
@@ -82,6 +82,7 @@ export default {
           "topic": "新的主题",
           "id": nanoid(),
           "chat_time": this.getNowTime(),
+          "sending": false,
           "message": [
             {"role": "assistant", "content": "你好，很高兴认识你，随便问点什么吧！", "time": this.getNowTime()},
 
@@ -187,6 +188,7 @@ export default {
     },
     sendMsg(chat_id) {
       let current_index = this.getChatIndex(chat_id)
+      this.chatList[current_index].sending = true
       this.chatList[current_index].message.push({
         "role": "user",
         "content": this.msg,
@@ -230,6 +232,7 @@ export default {
       }).then(res => {
         if (res.status === 'done') {
           this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = res.result
+          this.chatList[current_index].sending = false
           this.toBottom()
         } else {
           if (res.status === 'pending') {
@@ -390,19 +393,29 @@ export default {
             padding: 10px;
             border-radius: 5px;
             &.user {
-              background-color: #f4f4f4;
-              color: #333;
+              //background-color: #f4f4f4;
+              //color: #333;
+              background-color: #95ec69;
+              color: #24243a;
               align-self: flex-end;
             }
             &.assistant {
-              background-color: #00a2ff;
-              color: white;
+              //background-color: #00a2ff;
+              //color: white;
+              background-color: #f4f4f4;
+              color: #24243a;
               align-self: flex-start;
             }
             code {
               //background-color: #282c34;
               padding: 0 10px;
               border-radius: 5px;
+            }
+            ol, ul, dl {
+              //list-style: none;
+              //margin: 0;
+              padding-left: 0;
+              list-style-position: inside;
             }
 
           }
