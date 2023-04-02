@@ -31,7 +31,7 @@
         <textarea @keydown.enter="keyDown" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
         <button @click="sendMsg(chatList[current_index].id)">发送</button>
       </div>
-      <p style="color:#b2afaf; fontSize:10px">测试中，目前不具备连续对话的能力，所有的聊天记录可以在本地的localStorage中找到</p>
+      <p style="color:#b2afaf; fontSize:10px">测试中,所有的聊天记录可以在本地的localStorage中找到。可以同时开多个主题进行对话，随意切换</p>
     </div>
 
   </div>
@@ -233,11 +233,11 @@ export default {
           this.toBottom()
         } else {
           if (res.status === 'pending') {
-            if(res.wait_tasks <= 1) {
-              this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `正在回答中`
-            } else {
-              this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `排队中，还剩${res.wait_tasks}个`
-            }
+            // if(res.wait_tasks <= 1) {
+            //   this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `正在回答中`
+            // } else {
+            this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `排队中，还剩${res.wait_tasks}个`
+            // }
           } else if(res.status == 'processing') {
             this.chatList[current_index].message[this.chatList[current_index].message.length - 1].content = `正在回答中...`
           }
@@ -249,6 +249,22 @@ export default {
     },
     postSendMsg(msg, chat_id) {
       let current_index = this.getChatIndex(chat_id)
+
+      let pre_id = ""
+      if(this.chatList[current_index].message.length > 1) {
+        for (let message of this.chatList[current_index].message) {
+          console.log(message)
+          if (message.role === 'user' && message.msg_id !== "") {
+            pre_id = message.msg_id
+            console.log(pre_id)
+          }
+        }
+      }
+      // 这里的pre_id 为什么为空 ？
+      //
+
+      console.log("pre_id", pre_id)
+
       // 用fatch发送消息post请求
       fetch('msg-api/message', {
         method: 'POST',
@@ -257,7 +273,8 @@ export default {
         },
         body: JSON.stringify({
           "message": msg,
-          "key": "88888888-88888888-88888888-88888888"
+          "key": "88888888-88888888-88888888-88888888",
+          "pre_id": pre_id,
         })
       }).then(res => {
         return res.json()
