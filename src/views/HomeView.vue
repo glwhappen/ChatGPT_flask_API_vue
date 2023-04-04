@@ -112,6 +112,10 @@ export default {
   },
   methods: {
     refreshLast() {
+      if(this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].role == 'assistant') {
+        // 删除最后一条assistant的message
+        this.chatList[this.current_index].message.pop()
+      }
       // 如果chatList message的最后一条role不是assistant，就用msg_id 重新请求一下result
       if(this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].role != 'assistant') {
         let msg_id = this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].msg_id
@@ -347,6 +351,7 @@ export default {
     display: flex;
     flex-direction: column;
     padding: 0 10%;
+    width: 100%;
 
 
     .chat-item-header {
@@ -375,7 +380,7 @@ export default {
       flex: 1;
       height: 100vh;
       overflow: auto;
-
+      width: 100%;
 
       .chat-item-body {
         //height: 500px;
@@ -392,6 +397,7 @@ export default {
           .chat-item-body-message-content {
             padding: 10px;
             border-radius: 5px;
+            width: 100%;
             &.user {
               //background-color: #f4f4f4;
               //color: #333;
