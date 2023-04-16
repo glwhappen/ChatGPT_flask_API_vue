@@ -328,10 +328,12 @@ export default {
       flex-direction: column;
       //background-color: #f4f4f4;
       height: 500px;
+      overflow: auto;
 
       .chat-item {
         user-select: none;
         background-color: rgba(81, 203, 213, 0.66);
+        flex-shrink: 0;
         color: white;
         border-radius: 5px;
         padding: 10px;
