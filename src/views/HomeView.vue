@@ -1,24 +1,6 @@
 <template>
   <div class="container">
-    <div class="left">
-      <div class="add-topic">
-        <button @click="addTopic">添加主题</button>
-      </div>
-      <div class="chat-list">
-        <div class="chat-item" :class="{activate: index == current_index}" v-for="(item, index) in chatList" :key="item.id" @click="clickChatListItem(item.id)">
-          <div class="chat-item-header">
-            <div class="chat-item-header-title">{{ item.topic }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="chat-main">
-      <div class="chat-item-header">
-        <div class="chat-item-header-time">{{ chatList[current_index].chat_time }}</div>
-        <div class="chat-item-header-title">{{ chatList[current_index].topic }}</div>
-        <div class="delete" @click="deleteTopic(chatList[current_index].id)">删除主题</div>
-      </div>
       <div class="chat-detail" ref="chatBodyRef">
         <div class="chat-item-body">
           <div class="chat-item-body-message" v-for="message in chatList[current_index].message" :key="message.msg_id">
@@ -28,10 +10,8 @@
         </div>
       </div>
       <div class="chat-input">
-        <textarea @keydown.enter="keyDown" :disabled="chatList[current_index].sending" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
-        <button @click="sendMsg(chatList[current_index].id)">发送</button>
+        <textarea @keydown.enter="keyDown" placeholder="请输入内容 按住Enter键发送消息,按住Ctrl+Enter键换行" v-model="msg" />
       </div>
-      <p style="color:#b2afaf; fontSize:10px">测试中,所有的聊天记录可以在本地的localStorage中找到。可以同时开多个主题进行对话，随意切换</p>
     </div>
 
   </div>
@@ -102,40 +82,24 @@ export default {
   },
   watch: {
     current_index() {
-      this.refreshLast()
       this.toBottom()
     }
   },
   mounted() {
     this.loadChatList()
-    this.refreshLast()
   },
   methods: {
-    refreshLast() {
-      if(this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].role == 'assistant') {
-        // 删除最后一条assistant的message
-        this.chatList[this.current_index].message.pop()
-      }
-      // 如果chatList message的最后一条role不是assistant，就用msg_id 重新请求一下result
-      if(this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].role != 'assistant') {
-        let msg_id = this.chatList[this.current_index].message[this.chatList[this.current_index].message.length - 1].msg_id
-        this.chatList[this.current_index].message.push({
-          "role": "assistant",
-          "content": '连接服务器中',
-          "time": this.getNowTime()
-        })
-        this.getMsg(msg_id, this.chatList[this.current_index].id)
-      }
-    },
     deleteTopic(chat_id) {
       let index = this.getChatIndex(chat_id)
       this.chatList.splice(index, 1)
       this.saveChatList()
     },
     saveChatList() {
+      return
       localStorage.setItem('chatList', JSON.stringify(this.chatList))
     },
     loadChatList() {
+      return
       let chatList = localStorage.getItem('chatList')
       if(chatList) {
         this.chatList = JSON.parse(chatList)
@@ -305,78 +269,12 @@ export default {
 .container {
   display: flex;
   height: 100%;
-  .left {
-    .add-topic {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 30px;
-      background-color: #f4f4f4;
-      cursor: pointer;
-      button {
-        border: none;
-        background-color: #f4f4f4;
-        font-size: 1rem;
-        color: #333;
-        cursor: pointer;
-        user-select: none;
-      }
-      margin-bottom: 20px;
-    }
-    .chat-list {
-      display: flex;
-      flex-direction: column;
-      //background-color: #f4f4f4;
-      height: 500px;
-      overflow: auto;
-
-      .chat-item {
-        user-select: none;
-        background-color: rgba(81, 203, 213, 0.66);
-        flex-shrink: 0;
-        color: white;
-        border-radius: 5px;
-        padding: 10px;
-        margin: 2px;
-        width: 7rem;
-        overflow: hidden;
-        cursor: pointer;
-        &.activate {
-          background-color: rgba(81, 147, 213, 0.66);
-          color: white;
-        }
-      }
-    }
-  }
   .chat-main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 0 10%;
+    //padding: 0 10%;
     width: 100%;
-
-
-    .chat-item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      width: 100%;
-
-      .chat-item-header-title {
-        font-size: 1.2rem;
-        font-weight: 500;
-        margin-bottom: 0.4rem;
-        color: var(--color-heading);
-      }
-      .chat-item-header-time {
-        font-size: 0.8rem;
-        color: #999;
-      }
-      .delete {
-        cursor: pointer;
-      }
-    }
 
     .chat-detail {
       flex: 1;
@@ -387,8 +285,6 @@ export default {
       .chat-item-body {
         //height: 500px;
         overflow: auto;
-
-
 
         .chat-item-body-message {
           display: flex;
@@ -449,14 +345,9 @@ export default {
         border: 1px solid #ccc;
         border-radius: 5px;
         padding: 5px;
-      }
-      button {
-        margin-left: 10px;
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background-color: #fff;
-        cursor: pointer;
+        //resize: none;
+        outline: none;
+        height: 4rem;
       }
     }
 
